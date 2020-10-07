@@ -4,7 +4,6 @@ Current "version": 4.4
 
 
 Todo:
-- Implement socks5 proxy for curl.
 - Revisit the server fuzzer.
 - Add heuristics for blind sql injections.
 - Add heuristics for stacked queries sql injections.
