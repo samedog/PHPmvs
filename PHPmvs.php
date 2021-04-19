@@ -985,7 +985,7 @@ function frame3()
         while ($i <= $count) {
             $query_nombre = str_replace('$i', "$i", $query_n);
             $nombre       = GetBetween(get_url($url . $query_nombre . $sobras,$proxy));
-            echo "<option value=\"" . hexEncode($nombre) . "\">$nombre</optionget_url>";
+            echo "<option value=\"" . hexEncode($nombre) . "\">$nombre</option>";
             $i++;
         }
         
